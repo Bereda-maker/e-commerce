@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Foundation\Application;
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Foundation\Configuration\Middleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withRouting(
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
+        health: '/up',
+    )
+    ->withMiddleware(function (Middleware $middleware) {
+        // Stripe's webhook POST carries no CSRF token (it's not a form
+        // submission from our own site) — verified instead by its own
+        // signature check inside StripeWebhookController. CSRF protection
+        // stays on by default in Laravel for every other route, which is
+        // the point this exclusion is deliberately narrow.
+        $middleware->validateCsrfTokens(except: ['webhooks/stripe']);
+    })
+    ->withExceptions(function (Exceptions $exceptions) {
+        //
+    })->create();

@@ -1,0 +1,43 @@
+<?php
+
+use App\Contracts\PaymentGateway;
+use App\Models\Cart;
+use App\Models\CartItem;
+use App\Models\Order;
+use App\Models\ProductVariant;
+use App\Models\User;
+use App\Services\CheckoutService;
+
+test('checkout decrements stock and creates a pending order', function () {
+    $variant = ProductVariant::factory()->create(['stock_count' => 5, 'price_cents' => 2000]);
+    $buyer = User::factory()->create();
+    $cart = Cart::factory()->for($buyer)->create();
+    CartItem::factory()->for($cart)->create(['product_variant_id' => $variant->id, 'quantity' => 2]);
+
+    $this->mock(PaymentGateway::class, function ($mock) {
+        $mock->shouldReceive('createPaymentIntent')
+            ->once()
+            ->andReturn((object) ['id' => 'pi_test_123', 'client_secret' => 'secret']);
+    });
+
+    $order = app(CheckoutService::class)->checkout($buyer, $cart->fresh('items'));
+
+    expect($order->status)->toBe(Order::STATUS_PENDING);
+    expect($order->total_cents)->toBe(4000);
+    expect($variant->fresh()->stock_count)->toBe(3);
+    expect($cart->fresh()->items)->toBeEmpty();
+});
+
+test('checkout throws when requested quantity exceeds stock', function () {
+    $variant = ProductVariant::factory()->create(['stock_count' => 1]);
+    $buyer = User::factory()->create();
+    $cart = Cart::factory()->for($buyer)->create();
+    CartItem::factory()->for($cart)->create(['product_variant_id' => $variant->id, 'quantity' => 2]);
+
+    $this->mock(PaymentGateway::class); // should never be called
+
+    expect(fn () => app(CheckoutService::class)->checkout($buyer, $cart->fresh('items')))
+        ->toThrow(\App\Exceptions\OutOfStockException::class);
+
+    expect($variant->fresh()->stock_count)->toBe(1); // untouched — the transaction rolled back
+});
