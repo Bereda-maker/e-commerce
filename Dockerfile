@@ -8,6 +8,10 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 COPY . .
+
+RUN mkdir -p storage/framework/{cache/data,sessions,testing,views} storage/logs bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
