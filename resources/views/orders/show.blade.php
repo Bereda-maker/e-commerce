@@ -15,9 +15,20 @@
 
         <div class="flex items-center justify-between mb-8">
             <h1 class="text-2xl font-extrabold text-ink-900">Order #{{ $order->id }}</h1>
-            <span class="text-xs font-semibold px-3 py-1.5 rounded-full capitalize {{ $statusStyle }}">
-                {{ str_replace('_', ' ', $order->status) }}
-            </span>
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold px-3 py-1.5 rounded-full capitalize {{ $statusStyle }}">
+                    {{ str_replace('_', ' ', $order->status) }}
+                </span>
+                @if ($order->status === \App\Models\Order::STATUS_PENDING)
+                    <form method="POST" action="{{ route('orders.cancel', $order) }}"
+                          onsubmit="return confirm('Cancel this order? Reserved stock will be released.');">
+                        @csrf
+                        <button type="submit" class="text-xs font-semibold text-red-600 hover:text-red-700 underline">
+                            Cancel order
+                        </button>
+                    </form>
+                @endif
+            </div>
         </div>
 
         <div class="rounded-2xl border border-gray-200 bg-white divide-y">
