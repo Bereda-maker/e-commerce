@@ -14,6 +14,7 @@ class Order extends Model
     public const STATUS_PENDING = 'pending';
     public const STATUS_PAID = 'paid';
     public const STATUS_PAYMENT_FAILED = 'payment_failed';
+    public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = ['user_id', 'status', 'total_cents', 'stripe_payment_intent_id'];
 
