@@ -85,6 +85,24 @@ database/migrations/                products, product_variants, carts, cart_item
 tests/Feature/CheckoutConcurrencyTest.php   the two-simultaneous-checkouts proof
 ```
 
+## Additional features
+
+- **Admin dashboard** (`/admin/dashboard`, gated by `users.is_admin` via the
+  `admin` middleware) — revenue and top-products charts (Chart.js), a
+  low-stock alert list, and recent orders. Every number comes from a real
+  aggregate query against `orders`/`order_items`/`product_variants` —
+  revenue specifically only counts `status = 'paid'` orders, so it can't be
+  inflated by abandoned carts or failed payments.
+- **Wishlist** (`/favorites`) — users can save products via the heart
+  button on any product page; backed by a real `favorites` table, not
+  client-side-only state.
+- **Order cancellation** — a buyer can cancel their own still-`pending`
+  order (`OrderController::cancel`). This releases the reserved stock
+  *and* cancels the underlying Stripe PaymentIntent (`PaymentGateway::
+  cancelPaymentIntent`) — without the Stripe-side cancellation, a customer
+  completing payment on an old tab after "cancelling" would be charged for
+  an order the app already considers gone.
+
 ## Local development
 
 Requires PHP 8.2+, Composer, and MySQL (Docker is easiest).
