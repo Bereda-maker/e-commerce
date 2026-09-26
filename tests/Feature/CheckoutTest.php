@@ -41,3 +41,40 @@ test('checkout throws when requested quantity exceeds stock', function () {
 
     expect($variant->fresh()->stock_count)->toBe(1); // untouched — the transaction rolled back
 });
+
+test('cancelling a pending order releases stock and cancels the PaymentIntent', function () {
+    $variant = ProductVariant::factory()->create(['stock_count' => 5]);
+    $order = Order::factory()->create([
+        'status' => Order::STATUS_PENDING,
+        'stripe_payment_intent_id' => 'pi_test_cancel_me',
+    ]);
+    $order->items()->create([
+        'product_variant_id' => $variant->id,
+        'product_name' => 'Test product',
+        'unit_price_cents' => 1000,
+        'quantity' => 2,
+    ]);
+    // Stock already reflects the earlier decrement from checkout — cancel should add it back.
+    $variant->decrement('stock_count', 2);
+
+    $this->mock(PaymentGateway::class, function ($mock) {
+        $mock->shouldReceive('cancelPaymentIntent')->once()->with('pi_test_cancel_me');
+    });
+
+    app(CheckoutService::class)->cancelOrder($order);
+
+    expect($order->fresh()->status)->toBe(Order::STATUS_CANCELLED);
+    expect($variant->fresh()->stock_count)->toBe(5); // released back
+});
+
+test('cancelling a non-pending order is a no-op', function () {
+    $order = Order::factory()->create(['status' => Order::STATUS_PAID]);
+
+    $this->mock(PaymentGateway::class, function ($mock) {
+        $mock->shouldReceive('cancelPaymentIntent')->once(); // still attempted on Stripe's side...
+    });
+
+    app(CheckoutService::class)->cancelOrder($order);
+
+    expect($order->fresh()->status)->toBe(Order::STATUS_PAID); // ...but local status is untouched
+});
