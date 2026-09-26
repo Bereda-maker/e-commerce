@@ -72,15 +72,23 @@
                             </svg>
                             <span class="hidden sm:inline">{{ Str::before(auth()->user()->name, ' ') }}</span>
                         </button>
-                        <div class="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg py-1 hidden group-hover:block">
+                        <div class="absolute right-0 mt-2 w-44 bg-white border rounded-lg shadow-lg py-1 hidden group-hover:block">
                             <a href="{{ route('orders.index') }}" class="block px-4 py-2 text-sm hover:bg-gray-50">My Orders</a>
+                            <a href="{{ route('favorites.index') }}" class="block px-4 py-2 text-sm hover:bg-gray-50">Wishlist</a>
                             <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm hover:bg-gray-50">Profile</a>
+                            @if (auth()->user()->is_admin)
+                                <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm hover:bg-gray-50 text-brand-600 font-medium border-t">Admin dashboard</a>
+                            @endif
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
-                                <button type="submit" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50">Log out</button>
+                                <button type="submit" class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 border-t">Log out</button>
                             </form>
                         </div>
                     </div>
+
+                    <a href="{{ route('favorites.index') }}" class="hidden sm:flex text-ink-800 hover:text-brand-600 transition" aria-label="Wishlist">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z"/></svg>
+                    </a>
 
                     <a href="{{ route('cart') }}" class="relative flex items-center gap-1.5 text-ink-800 hover:text-brand-600 transition">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
