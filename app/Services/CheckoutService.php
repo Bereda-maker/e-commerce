@@ -134,4 +134,42 @@ class CheckoutService
             $order->update(['status' => Order::STATUS_PAYMENT_FAILED]);
         });
     }
+
+    /**
+     * A buyer-initiated cancellation, only ever allowed while an order is
+     * still 'pending' (i.e. payment was never actually confirmed — see
+     * OrderController::cancel(), which enforces both this status check and
+     * ownership before calling here). Releases reserved stock the same
+     * way a failed payment does; the two cases end at different terminal
+     * statuses ('cancelled' vs 'payment_failed') so the order history
+     * still shows an honest record of what actually happened, rather than
+     * collapsing both into one generic "not paid" state.
+     */
+    public function cancelOrder(Order $order): void
+    {
+        // Cancel on Stripe's side first, outside the DB transaction — if
+        // this fails for a reason other than "nothing to cancel" (a
+        // network error, say), we'd rather leave the order as 'pending'
+        // and let the buyer retry than mark it cancelled locally while
+        // Stripe still considers it payable.
+        if ($order->stripe_payment_intent_id) {
+            $this->paymentGateway->cancelPaymentIntent($order->stripe_payment_intent_id);
+        }
+
+        DB::transaction(function () use ($order) {
+            $locked = Order::where('id', $order->id)->lockForUpdate()->first();
+
+            if (! $locked || $locked->status !== Order::STATUS_PENDING) {
+                return;
+            }
+
+            foreach ($locked->items as $item) {
+                ProductVariant::where('id', $item->product_variant_id)
+                    ->lockForUpdate()
+                    ->increment('stock_count', $item->quantity);
+            }
+
+            $locked->update(['status' => Order::STATUS_CANCELLED]);
+        });
+    }
 }
