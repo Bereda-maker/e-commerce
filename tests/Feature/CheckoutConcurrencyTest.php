@@ -25,6 +25,11 @@ final class FakePaymentGateway implements PaymentGateway
             'client_secret' => 'secret_test',
         ];
     }
+
+    public function cancelPaymentIntent(string $paymentIntentId): void
+    {
+        // no-op — no real Stripe call to cancel in tests
+    }
 }
 
 /**
