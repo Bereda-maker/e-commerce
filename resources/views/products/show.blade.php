@@ -21,10 +21,15 @@
             </div>
 
             <div>
-                @php $inStock = $product->totalStock() > 0; @endphp
-                <span class="inline-block text-xs font-bold tracking-wide uppercase {{ $inStock ? 'text-green-600' : 'text-gray-400' }} mb-2">
-                    {{ $inStock ? 'In stock' : 'Currently unavailable' }}
-                </span>
+                <div class="flex items-start justify-between gap-4 mb-2">
+                    @php $inStock = $product->totalStock() > 0; @endphp
+                    <span class="inline-block text-xs font-bold tracking-wide uppercase {{ $inStock ? 'text-green-600' : 'text-gray-400' }}">
+                        {{ $inStock ? 'In stock' : 'Currently unavailable' }}
+                    </span>
+                    @auth
+                        @livewire('favorite-button', ['product' => $product])
+                    @endauth
+                </div>
                 <h1 class="text-3xl font-extrabold text-ink-900 mb-4">{{ $product->name }}</h1>
 
                 @if ($product->variants->isNotEmpty())
