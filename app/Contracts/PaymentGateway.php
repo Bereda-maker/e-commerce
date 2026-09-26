@@ -14,4 +14,13 @@ interface PaymentGateway
 {
     /** @return object{id: string, client_secret: string} */
     public function createPaymentIntent(int $amountCents, string $currency, array $metadata): object;
+
+    /**
+     * Called when a buyer cancels a still-pending order. Without this,
+     * cancelling only updates our own database — the PaymentIntent stays
+     * open on Stripe's side, so a customer who completes payment on an
+     * old checkout tab after "cancelling" would be charged for an order
+     * we've already told them doesn't exist.
+     */
+    public function cancelPaymentIntent(string $paymentIntentId): void;
 }
